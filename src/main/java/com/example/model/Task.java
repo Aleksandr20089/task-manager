@@ -1,6 +1,8 @@
 package com.example.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "tasks")
@@ -11,6 +13,8 @@ public class Task {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank(message = "Название задачи не должно быть пустым")
+    @Size(min = 2, max = 100, message = "Название должно быть от 2 до 100 символов")
     private String title;
 
     private String description;

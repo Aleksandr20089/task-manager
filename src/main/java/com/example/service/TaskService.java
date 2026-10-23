@@ -1,6 +1,7 @@
 package com.example.service;
 
 
+import com.example.exception.ResourceNotFoundException;
 import com.example.model.Task;
 import com.example.repository.TaskRepository;
 import org.springframework.stereotype.Service;
@@ -21,10 +22,10 @@ public class TaskService {
         return taskRepository.findAll();
     }
 
-    // получаем задачу по айди или выдаст ошибку если её нету
+    // получаем задачу по айди или выдаст ошибку если её нету, тут связано с папкой exception
     public Task getTaskById(Long id) {
         return taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Задача с id" + id + " не найдена!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Задача с id" + id + " не найдена!"));
 
     }
 
