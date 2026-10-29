@@ -1,7 +1,9 @@
 package com.example.controller;
 
+import com.example.model.Subtask;
 import com.example.model.Task;
 import com.example.service.TaskService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -47,5 +49,24 @@ public class TaskController {
     public void deleteTask(@PathVariable Long id) {
 
         taskService.deleteTask(id);
+    }
+
+    @PostMapping("/{taskId}/subtasks")
+    public ResponseEntity<Subtask> addSubtask(
+            @PathVariable Long taskId,
+            @Valid @RequestBody Subtask subtask) {
+        Subtask createdSubtask = taskService.addSubtaskToTask(taskId, subtask);
+        return new ResponseEntity<>(createdSubtask, HttpStatus.CREATED);
+    }
+
+
+    // 2. Изменение статуса подзадачи (PATCH /tasks/{taskId}/subtasks/{subtaskId}/status)
+    @PatchMapping("/{taskId}/subtasks/{subtaskId}/status")
+    public ResponseEntity<Subtask> updateSubtaskStatus(
+            @PathVariable Long taskId,
+            @PathVariable Long subtaskId,
+            @RequestParam boolean completed) {
+        Subtask updatedSubtask = taskService.updateSubtaskStatus(taskId, subtaskId, completed);
+        return ResponseEntity.ok(updatedSubtask);
     }
 }
