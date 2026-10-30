@@ -1,6 +1,7 @@
 package com.example.service;
 
-
+import com.example.dto.TaskMapper;
+import com.example.dto.TaskResponseDto;
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.Subtask;
 import com.example.model.Task;
@@ -10,80 +11,73 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
 
-    private final TaskRepository taskRepository;
+    @Autowired
+    private TaskRepository taskRepository;
 
-    //Внедряю репозиторий с помощью конструктора
-    public TaskService(TaskRepository taskRepository) {
-        this.taskRepository = taskRepository;
-    }
-     //ТУт получаю все задачи
-    public List<Task> getAllTasks() {
-        return taskRepository.findAll();
-    }
+    @Autowired
+    private SubtaskRepository subtaskRepository;
 
-    // получаем задачу по айди или выдаст ошибку если её нету, тут связано с папкой exception
-    public Task getTaskById(Long id) {
-        return taskRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Задача с id" + id + " не найдена!"));
-
+    // Получить все задачи в виде DTO
+    public List<TaskResponseDto> getAllTasksDto() {
+        return taskRepository.findAll().stream()
+                .map(TaskMapper::toDto)
+                .collect(Collectors.toList());
     }
 
-    public Task createTask(Task task) {
-        //тут потом мб добавлю проверку
-        return taskRepository.save(task);
+    // Получить задачу по ID в виде DTO
+    public TaskResponseDto getTaskDtoById(Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Задача с id " + id + " не найдена"));
+        return TaskMapper.toDto(task);
     }
 
-    public Task updateTask(Long id, Task taskDetails) {
-        Task task = getTaskById(id);
+    // Создание задачи (принимает Entity сохраняет и возвращает DTO)
+    public TaskResponseDto createTask(Task task) {
+        Task savedTask = taskRepository.save(task);
+        return TaskMapper.toDto(savedTask);
+    }
+
+    // Обновление задачи
+    public TaskResponseDto updateTask(Long id, Task taskDetails) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Задача с id " + id + " не найдена"));
 
         task.setTitle(taskDetails.getTitle());
         task.setDescription(taskDetails.getDescription());
         task.setCompleted(taskDetails.isCompleted());
         task.setDeadline(taskDetails.getDeadline());
 
-        // Если нужно обновить и список подзадач целиком (опционально)
-        if (taskDetails.getSubtasks() != null) {
-            task.setSubtasks(taskDetails.getSubtasks());
-        }
-
-        return taskRepository.save(task);
+        Task updatedTask = taskRepository.save(task);
+        return TaskMapper.toDto(updatedTask);
     }
 
-    //удаляю задачу по айди
-    public void deleteTask(Long id){
-        taskRepository.deleteById(id);
+    // Удаление задачи
+    public void deleteTask(Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Задача с id " + id + " не найдена"));
+        taskRepository.delete(task);
     }
 
-    @Autowired
-    private SubtaskRepository subtaskRepository;
-
-    // Метод добавления подзадачи к задаче
+    // Добавление подзадачи
     public Subtask addSubtaskToTask(Long taskId, Subtask subtask) {
-
-        // 1. Находим родительскую задачу (если её нет, выбросится наш ResourceNotFoundException)
-        Task task = getTaskById(taskId);
-
-        // 2. Связываем подзадачу с задачей
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Задача с id " + taskId + " не найдена"));
         subtask.setTask(task);
-
-        // 3. Сохраняем подзадачу в БД
         return subtaskRepository.save(subtask);
     }
 
-    // Метод переключения статуса подзадачи (выполнена / не выполнена)
+    // Обновление статуса подзадачи
     public Subtask updateSubtaskStatus(Long taskId, Long subtaskId, boolean completed) {
-        // 1. Убедимся, что родительская задача существует
-        getTaskById(taskId);
-
-        // 2. Ищем подзадачу
+        if (!taskRepository.existsById(taskId)) {
+            throw new ResourceNotFoundException("Задача с id " + taskId + " не найдена");
+        }
         Subtask subtask = subtaskRepository.findById(subtaskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Подзадача с id " + subtaskId + " не найдена"));
-
-        // 3. Меняем статус и сохраняем
         subtask.setCompleted(completed);
         return subtaskRepository.save(subtask);
     }
