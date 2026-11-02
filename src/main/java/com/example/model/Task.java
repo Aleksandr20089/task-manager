@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-
 @Entity
 @Table(name = "tasks")
 public class Task {
@@ -35,20 +34,6 @@ public class Task {
     public Task() {
     }
 
-    public LocalDateTime getDeadline(){
-        return deadline;
-    }
-    public void setDeadline(LocalDateTime deadline){
-        this.deadline = deadline;
-    }
-
-    public List<Subtask> getSubtasks() {
-        return subtasks;
-    }
-    public void setSubtasks(List<Subtask> subtasks) {
-        this.subtasks = subtasks;
-    }
-
     // Конструктор для удобного создания задачи
     public Task(String title, String description, boolean completed) {
         this.title = title;
@@ -56,19 +41,22 @@ public class Task {
         this.completed = completed;
     }
 
-    // Геттеры и сеттеры (чтобы получать и менять поля)
-    public Long getId() {
+    // Вспомогательный метод для добавления подзадачи (обязательно для связей)
+    public void addSubtask(Subtask subtask) {
+        subtasks.add(subtask);
+        subtask.setTask(this);
+    }
 
+    // Геттеры и сеттеры
+    public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
-
         this.id = id;
     }
 
     public String getTitle() {
-
         return title;
     }
 
@@ -77,22 +65,34 @@ public class Task {
     }
 
     public String getDescription() {
-
         return description;
     }
 
     public void setDescription(String description) {
-
         this.description = description;
     }
 
     public boolean isCompleted() {
-
         return completed;
     }
 
     public void setCompleted(boolean completed) {
-
         this.completed = completed;
+    }
+
+    public LocalDateTime getDeadline(){
+        return deadline;
+    }
+
+    public void setDeadline(LocalDateTime deadline){
+        this.deadline = deadline;
+    }
+
+    public List<Subtask> getSubtasks() {
+        return subtasks;
+    }
+
+    public void setSubtasks(List<Subtask> subtasks) {
+        this.subtasks = subtasks;
     }
 }

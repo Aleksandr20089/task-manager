@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.dto.TaskResponseDto;
 import com.example.exception.ResourceNotFoundException;
 import com.example.model.Task;
 import com.example.repository.TaskRepository;
@@ -26,7 +27,7 @@ class TaskServiceTest {
     private TaskService taskService;
 
     @Test
-    void getTaskById_ShouldReturnTask_WhenTaskExists() {
+    void getTaskDtoById_ShouldReturnTaskDto_WhenTaskExists() {
         // 1. Подготовка (Given): настраиваем поведение базы данных
         Task mockTask = new Task();
         mockTask.setId(1L);
@@ -34,23 +35,23 @@ class TaskServiceTest {
 
         when(taskRepository.findById(1L)).thenReturn(Optional.of(mockTask));
 
-        // 2. Действие (When): вызываем метод сервиса
-        Task result = taskService.getTaskById(1L);
+        // 2. Действие (When): вызываем метод сервиса (возвращает TaskResponseDto)
+        TaskResponseDto result = taskService.getTaskDtoById(1L);
 
         // 3. Проверка (Then): убеждаемся, что всё отработало корректно
         assertNotNull(result);
-        assertEquals("Купить молоко", result.getTitle());
+        assertEquals("Купить молоко", result.title()); // У Java-рекорда вызов идет через .title(), а не .getTitle()
         verify(taskRepository, times(1)).findById(1L);
     }
 
     @Test
-    void getTaskById_ShouldThrowException_WhenTaskNotFound() {
+    void getTaskDtoById_ShouldThrowException_WhenTaskNotFound() {
         // 1. Подготовка: говорим, что задача с id 999 не найдена
         when(taskRepository.findById(999L)).thenReturn(Optional.empty());
 
         // 2 & 3. Действие и Проверка: проверяем, что вылетело наше кастомное исключение
         assertThrows(ResourceNotFoundException.class, () -> {
-            taskService.getTaskById(999L);
+            taskService.getTaskDtoById(999L);
         });
 
         verify(taskRepository, times(1)).findById(999L);
