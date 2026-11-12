@@ -8,6 +8,8 @@ import com.example.model.Task;
 import com.example.repository.SubtaskRepository;
 import com.example.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,20 +29,25 @@ public class TaskService {
     private SubtaskRepository subtaskRepository;
 
     // Получить все задачи в виде DTO-рекордов (без параметров)
+    @Cacheable(value = "tasks", key = "'all_tasks'")
     public List<TaskResponseDto> getAllTasksDto() {
+        System.out.println("🔥 ЗАПРОС ПОШЕЛ В POSTGRESQL (getAllTasksDto)");
         return taskRepository.findAll().stream()
                 .map(TaskMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     // Получить задачу по ID в виде DTO-рекорда
+    @Cacheable(value = "tasks", key = "#id")
     public TaskResponseDto getTaskDtoById(Long id) {
+        System.out.println("🔥 ЗАПРОС ПОШЕЛ В POSTGRESQL (getTaskDtoById id=" + id + ")");
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Задача с id " + id + " не найдена"));
         return TaskMapper.toDto(task);
     }
 
     // Создание задачи из Request DTO (с опциональными подзадачами)
+    @CacheEvict(value = "tasks", allEntries = true)
     public TaskResponseDto createTask(TaskRequestDto requestDto) {
         Task task = new Task();
         task.setTitle(requestDto.title());
@@ -63,6 +70,7 @@ public class TaskService {
     }
 
     // Обновление задачи
+    @CacheEvict(value = "tasks", allEntries = true)
     public TaskResponseDto updateTask(Long id, TaskRequestDto requestDto) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Задача с id " + id + " не найдена"));
@@ -76,6 +84,7 @@ public class TaskService {
     }
 
     // Удаление задачи
+    @CacheEvict(value = "tasks", allEntries = true)
     public void deleteTask(Long id) {
         Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Задача с id " + id + " не найдена"));
@@ -83,6 +92,7 @@ public class TaskService {
     }
 
     // Добавление подзадачи к существующей задаче через DTO
+    @CacheEvict(value = "tasks", allEntries = true)
     public SubtaskResponseDto addSubtaskToTask(Long taskId, SubtaskRequestDto requestDto) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new ResourceNotFoundException("Задача с id " + taskId + " не найдена"));
@@ -97,6 +107,7 @@ public class TaskService {
     }
 
     // Обновление статуса подзадачи
+    @CacheEvict(value = "tasks", allEntries = true)
     public SubtaskResponseDto updateSubtaskStatus(Long taskId, Long subtaskId, boolean completed) {
         if (!taskRepository.existsById(taskId)) {
             throw new ResourceNotFoundException("Задача с id " + taskId + " не найдена");
@@ -110,7 +121,9 @@ public class TaskService {
     }
 
     // Получить задачи с учетом фильтрации по completed, а также пагинации и сортировки
+    @Cacheable(value = "tasks", key = "#completed + '_' + #page + '_' + #size + '_' + #sortBy")
     public List<TaskResponseDto> getAllTasksDto(Boolean completed, int page, int size, String sortBy) {
+        System.out.println("🔥 ЗАПРОС ПОШЕЛ В POSTGRESQL (getAllTasksDto with pagination)");
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
 
         Page<Task> taskPage;
